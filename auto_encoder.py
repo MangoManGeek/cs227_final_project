@@ -1,4 +1,7 @@
 import tensorflow as tf
+import numpy as np
+from dtw import *
+# from tf_dtw import tf_dtw
 
 class Encoder(tf.keras.Model):
 
@@ -108,12 +111,68 @@ class AutoEncoder:
         self.loss = loss
         self.optimizer = optimizer
 
+def similarity_funcs(input):
+    # 50 x 150 x 1
+    # 50 x 150
+    print("1")
+    remove_last_dim = tf.reshape(input, [input.shape[0], input.shape[1]])
+    # 1225 x 150
+    total_distance = 0
+    for i in range(remove_last_dim.shape[0]):
+        for j in range(i + 1, remove_last_dim.shape[0]):
+            total_distance += tf_dtw(remove_last_dim[i], remove_last_dim[j])
+    return total_distance / (remove_last_dim.shape[0] * (remove_last_dim.shape[0] - 1) / 2)
+
+
+
+def eu_code_func(codes):
+    remove_last_dim = tf.reshape(codes, [codes.shape[0], codes.shape[1]])
+    # 1225 x 150
+    total_distance = 0
+    for i in range(remove_last_dim.shape[0]):
+        for j in range(i + 1, remove_last_dim.shape[0]):
+            total_distance += tf.linalg.norm(remove_last_dim[i] - remove_last_dim[j])
+    return total_distance / (remove_last_dim.shape[0] * (remove_last_dim.shape[0] - 1) / 2)
+
+
+def tf_dtw(s, t):
+    s = tf.cast(s, tf.float32)
+    t = tf.cast(t, tf.float32)
+    print("sb")
+    n = len(s)
+    m = len(t)
+    # DTW = tf.fill([len(s)+1,len(t)+1], tf.tensor(np.inf))
+    # DTW = [[tf.Variable(np.inf) for _ in range(len(t)+1)] for _ in range(len(s)+1)]
+    DTW = np.full([n + 1, m + 1], tf.Variable(np.inf))
+    DTW[0][0].assign(0)
+
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            cost = abs(s[i - 1] - t[j - 1])
+            last_min = tf.math.minimum(tf.math.minimum(DTW[i - 1][j], DTW[i][j - 1]), DTW[i - 1][j - 1])
+            DTW[i][j].assign(tf.math.add(cost, last_min))
+    return DTW[-1][-1]
+
+
 @tf.function
 def train_step(input, auto_encoder, optimizer=_optimizer, loss = _mse_loss):
+    # print("!!!!!!!!!!!")
     with tf.GradientTape() as tape:
+        # print("!!!!!!!!!!!")
+
+        dtw_input = similarity_funcs(input)
+        # dtw_input = tf_dtw(input, len(input))
+        print(dtw_input)
         codes = auto_encoder.encode(input, training=True)
+        eu_code = eu_code_func(codes)
+        # print(eu_code)
         decodes = auto_encoder.decode(codes, training=True)
-        loss = loss(input, decodes)
+        reconstruction_loss = loss(input, decodes)
+        # print(reconstruction_loss)
+        similarity_loss = loss(eu_code, dtw_input)
+        # print(similarity_loss)
+        loss = (reconstruction_loss + similarity_loss) / 2
+        # loss = (reconstruction_loss + eu_code) / 2
         trainables = auto_encoder.encode.trainable_variables + auto_encoder.decode.trainable_variables
     gradients = tape.gradient(loss, trainables)
     optimizer.apply_gradients(zip(gradients, trainables))
