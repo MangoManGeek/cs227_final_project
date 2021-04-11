@@ -264,7 +264,7 @@ def tf_dtw_with_matrix(s, t):
 
     return cost
 
-def train_step(input, auto_encoder, optimizer=_optimizer, loss=_mse_loss):
+def train_step(input, auto_encoder, optimizer=_optimizer, loss=_mse_loss, lambda_p=None):
     dtw_input = similarity_funcs(input)
     # print(dtw_input)
     with tf.GradientTape() as tape:
@@ -297,7 +297,8 @@ def train_step(input, auto_encoder, optimizer=_optimizer, loss=_mse_loss):
         similarity_loss = abs(tf.cast(eu_code, dtype=tf.float32) - tf.cast(dtw_input, dtype=tf.float32))
         # similarity_loss = loss(eu_code, dtw_input)
         # print(similarity_loss)
-        loss = LAMBDA * tf.cast(reconstruction_loss, dtype=tf.float32) + (1 - LAMBDA) * similarity_loss
+        lambda_p = lambda_p if lambda_p else LAMBDA
+        loss = lambda_p * tf.cast(reconstruction_loss, dtype=tf.float32) + (1 - lambda_p) * similarity_loss
         # loss = reconstruction_loss
         trainables = auto_encoder.encode.trainable_variables + auto_encoder.decode.trainable_variables
     gradients = tape.gradient(loss, trainables)
