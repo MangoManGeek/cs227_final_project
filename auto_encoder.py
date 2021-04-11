@@ -1,8 +1,9 @@
 import tensorflow as tf
 import numpy as np
 from dtw import *
+from tqdm import tqdm
 
-LAMBDA = 0.99
+LAMBDA = 0.01
 
 class Encoder(tf.keras.Model):
 
@@ -124,8 +125,9 @@ def similarity_funcs(input):
     total_distance = 0
     for i in range(remove_last_dim.shape[0]):
         for j in range(i + 1, remove_last_dim.shape[0]):
-            total_distance += tf_dtw_with_matrix(tf.cast(remove_last_dim[i], dtype=tf.float64), tf.cast(remove_last_dim[j], dtype=tf.float64))
+            # total_distance += tf_dtw_with_matrix(tf.cast(remove_last_dim[i], dtype=tf.float64), tf.cast(remove_last_dim[j], dtype=tf.float64))
             # dist = tf.linalg.norm(remove_last_dim[i] - remove_last_dim[j])
+            total_distance += dtw(tf.cast(remove_last_dim[i], dtype=tf.float64), tf.cast(remove_last_dim[j], dtype=tf.float64)).distance
     return total_distance / (remove_last_dim.shape[0] * (remove_last_dim.shape[0] - 1) / 2)
 
 
@@ -262,6 +264,8 @@ def tf_dtw_with_matrix(s, t):
     return cost
 
 def train_step(input, auto_encoder, optimizer=_optimizer, loss=_mse_loss):
+    dtw_input = similarity_funcs(input)
+    # print(dtw_input)
     with tf.GradientTape() as tape:
         # # print(input.shape)
         # dtw_input = similarity_funcs(input)
@@ -280,7 +284,7 @@ def train_step(input, auto_encoder, optimizer=_optimizer, loss=_mse_loss):
         # trainables = auto_encoder.encode.trainable_variables + auto_encoder.decode.trainable_variables
 
         # print(input.shape)
-        dtw_input = similarity_funcs(input)
+        # dtw_input = similarity_funcs(input)
         # print(dtw_input)
         codes = auto_encoder.encode(input, training=True)
         eu_code = eu_code_func(codes)
@@ -292,9 +296,9 @@ def train_step(input, auto_encoder, optimizer=_optimizer, loss=_mse_loss):
         similarity_loss = abs(tf.cast(eu_code, dtype=tf.float32) - tf.cast(dtw_input, dtype=tf.float32))
         # similarity_loss = loss(eu_code, dtw_input)
         # print(similarity_loss)
-        loss = LAMBDA * reconstruction_loss + (1 - LAMBDA) * similarity_loss
+        loss = LAMBDA * tf.cast(reconstruction_loss, dtype=tf.float32) + (1 - LAMBDA) * similarity_loss
         # loss = reconstruction_loss
         trainables = auto_encoder.encode.trainable_variables + auto_encoder.decode.trainable_variables
     gradients = tape.gradient(loss, trainables)
     optimizer.apply_gradients(zip(gradients, trainables))
-    return loss
+    return loss, similarity_loss, reconstruction_loss
