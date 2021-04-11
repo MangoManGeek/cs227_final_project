@@ -3,7 +3,7 @@ import numpy as np
 from dtw import *
 from tqdm import tqdm
 
-LAMBDA = 0.01
+LAMBDA = 0.99
 
 class Encoder(tf.keras.Model):
 
@@ -106,6 +106,7 @@ class AutoEncoder:
 
         self.encode = Encoder(input_shape, code_size, filters, kernel_sizes)
 
+        filters = filters[::-1]
         decoder_filters = list(filters[:len(filters) - 1])
         decoder_filters.append(input_shape[1])
         last_kernel_shape = self.encode.last_kernel_shape
