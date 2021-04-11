@@ -1,6 +1,7 @@
 import numpy as np
 
 TIME = 30
+# TIME = 3
 
 def augmentation(x, y):
     size = x.shape
