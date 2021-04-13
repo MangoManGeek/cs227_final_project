@@ -12,10 +12,19 @@ import datetime
 from auto_encoder import AutoEncoder, train_step, LAMBDA
 from preprocess import augmentation
 from tqdm import tqdm
+from sample_evaluation_funcs import *
 
 
 EPOCHS = 50
 BATCH = 10
+
+hyperparams = {
+	# for log purpose only
+	"model_type": "CNN",
+	"epochs": EPOCHS,
+	"batch_size": BATCH
+}
+# experiment.log_parameters(hyperparams)
 
 
 def min_max(data, feature_range=(0, 1)):
@@ -150,10 +159,13 @@ def sim_eval(X_test, code_test, suffix, experiment):
 
 def main():
 
-    experiment = Experiment(project_name="cs227_final", log_code=False)
+    experiment = Experiment(log_code=False)
     experiment.log_parameters(LAMBDA)
+    experiment.log_parameters(hyperparams)
 
-    X_train, y_train, X_test, y_test, info = py_ts_data.load_data("GunPoint", variables_as_channels=True)
+    dataset_name = "GunPoint"
+
+    X_train, y_train, X_test, y_test, info = py_ts_data.load_data(dataset_name, variables_as_channels=True)
     print("Dataset shape: Train: {}, Test: {}".format(X_train.shape, X_test.shape))
 
 
@@ -198,6 +210,8 @@ def main():
 
         code_test = recon_eval(ae, X_test, suffix, experiment)
         sim_eval(X_test, code_test, suffix, experiment)
+
+        sample_evaluation(ae.encode, ae.decode, experiment, suffix, DATA = dataset_name)
 
 if __name__ == '__main__':
     main()

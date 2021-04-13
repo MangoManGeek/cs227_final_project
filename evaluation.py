@@ -17,7 +17,7 @@ from sklearn.neighbors import NearestNeighbors, KNeighborsClassifier
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score, mean_squared_error, mean_absolute_error
 import argparse
-from utils import *
+# from utils import *
 
 def evaluate_reconstruction(x, encoder, decoder):
     """
