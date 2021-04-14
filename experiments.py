@@ -15,7 +15,7 @@ from tqdm import tqdm
 from sample_evaluation_funcs import *
 
 
-EPOCHS = 100
+EPOCHS = 50
 BATCH = 50
 
 hyperparams = {
@@ -218,7 +218,7 @@ def main():
     code_test = recon_eval(ae, X_test, suffix, experiment)
     sim_eval(X_test, code_test, suffix, experiment)
 
-    sample_evaluation(ae.encode, ae.decode, experiment, suffix, DATA = dataset_name)
+    sample_evaluation(ae.encode, encoder, ae.decode, experiment, suffix, DATA = dataset_name)
 
 if __name__ == '__main__':
     main()

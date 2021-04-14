@@ -72,12 +72,18 @@ import evaluation
 #     return CLUSTERING.predict(x)
 
 
-def sample_evaluation(ENCODER, DECODER, experiment, suffix, DATA = "GunPoint"):
+def sample_evaluation(ENCODER_SIM, ENCODER_REC, DECODER, experiment, suffix, DATA = "GunPoint"):
 
-    def encoder(x):
+    def encoder_sim(x):
         assert len(x.shape) == 2
         x = x[..., np.newaxis]
-        codes = ENCODER(x)
+        codes = ENCODER_SIM(x)
+        return codes.numpy()
+
+    def encoder_rec(x):
+        assert len(x.shape) == 2
+        x = x[..., np.newaxis]
+        codes = ENCODER_REC(x)
         return codes.numpy()
 
     def decoder(x):
@@ -116,10 +122,10 @@ def sample_evaluation(ENCODER, DECODER, experiment, suffix, DATA = "GunPoint"):
     N_CLUSTERS  = len(set(Y_TRAIN))
     CLUSTERING = KMeans(N_CLUSTERS).fit(X_TRAIN)
 
-    recon = evaluation.evaluate_reconstruction(X_TEST, encoder, decoder)
-    dist = evaluation.evaluate_distance(X_TEST, encoder, distance_collection)
-    common = evaluation.evaluate_common_nn(X_TRAIN, X_TEST, encoder, distance_timeseries, N_NEIGHBORS)
-    ri = evaluation.evaluate_clustering_ri(X_TRAIN, X_TEST, encoder, clustering, N_CLUSTERS)
+    recon = evaluation.evaluate_reconstruction(X_TEST, encoder_rec, decoder)
+    dist = evaluation.evaluate_distance(X_TEST, encoder_sim, distance_collection)
+    common = evaluation.evaluate_common_nn(X_TRAIN, X_TEST, encoder_sim, distance_timeseries, N_NEIGHBORS)
+    ri = evaluation.evaluate_clustering_ri(X_TRAIN, X_TEST, encoder_sim, clustering, N_CLUSTERS)
 
     experiment.log_metric("eval_recon "+ suffix, recon)
     experiment.log_metric("eval_distance_mse "+ suffix, dist[0])
