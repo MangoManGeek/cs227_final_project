@@ -9,14 +9,14 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 
 import datetime
-from auto_encoder import AutoEncoder, train_step, LAMBDA
+from auto_encoder import AutoEncoder, train_step, LAMBDA, Encoder, train_step_new
 from preprocess import augmentation
 from tqdm import tqdm
 from sample_evaluation_funcs import *
 
 
-EPOCHS = 50
-BATCH = 10
+EPOCHS = 100
+BATCH = 50
 
 hyperparams = {
 	# for log purpose only
@@ -53,7 +53,7 @@ def normalize(data):
     stddev = np.broadcast_to(np.std(data, axis=1)[:, None, :], (sz, l, d)) 
     return (data - means)/stddev
 
-def train(ae, EPOCHS, train_dataset, suffix, experiment, lambda_p):
+def train(ae, encoder, EPOCHS, train_dataset, suffix, experiment, lambda_p):
     print("training with lambda = ", lambda_p)
     loss_history = []
     sim_history = []
@@ -66,7 +66,7 @@ def train(ae, EPOCHS, train_dataset, suffix, experiment, lambda_p):
             total_re = 0
         #     for i, (input, _) in enumerate(train_dataset):
             for (input, _) in tqdm(train_dataset):
-                loss, similarity_loss, reconstruction_loss = train_step(input, ae, lambda_p=lambda_p)
+                loss, similarity_loss, reconstruction_loss = train_step_new(input, ae, encoder, lambda_p=lambda_p)
         #         if i % 100 == 0:
         #             print(loss)
                 total_loss += loss
@@ -184,34 +184,41 @@ def main():
     kwargs = {
         "input_shape": (X_train.shape[1], X_train.shape[2]),
         # "filters": [32, 64, 128],
-        "filters": [128, 64, 32],
+        # "filters": [128, 64, 32],
+        "filters": [32, 32, 32],
         "kernel_sizes": [5, 5, 5],
         "code_size": 16,
     }
 
 
     # lambda_to_test = [0.9, ]
-    for l in range(1, 10):
-        lam = l / 10
+    # for l in range(1, 10):
+    #     lam = l / 10
 
-        ae = AutoEncoder(**kwargs)
+    lam = 0.99
+    ae = AutoEncoder(**kwargs)
 
-        # training 
+    input_shape = kwargs["input_shape"]
+    code_size = kwargs["code_size"]
+    filters = kwargs["filters"]
+    kernel_sizes = kwargs["kernel_sizes"]
+    encoder = Encoder(input_shape, code_size, filters, kernel_sizes)
+    # training
 
-        SHUFFLE_BUFFER = 100
-        K = len(set(y_train))
+    SHUFFLE_BUFFER = 100
+    K = len(set(y_train))
 
-        train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train))
-        train_dataset = train_dataset.shuffle(SHUFFLE_BUFFER).batch(BATCH)
+    train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train))
+    train_dataset = train_dataset.shuffle(SHUFFLE_BUFFER).batch(BATCH)
 
-        suffix = "lam={lam}".format(lam=lam)
-        train(ae, EPOCHS, train_dataset, suffix, experiment, lam)
+    suffix = "lam={lam}".format(lam=lam)
+    train(ae, encoder, EPOCHS, train_dataset, suffix, experiment, lam)
 
 
-        code_test = recon_eval(ae, X_test, suffix, experiment)
-        sim_eval(X_test, code_test, suffix, experiment)
+    code_test = recon_eval(ae, X_test, suffix, experiment)
+    sim_eval(X_test, code_test, suffix, experiment)
 
-        sample_evaluation(ae.encode, ae.decode, experiment, suffix, DATA = dataset_name)
+    sample_evaluation(ae.encode, ae.decode, experiment, suffix, DATA = dataset_name)
 
 if __name__ == '__main__':
     main()
