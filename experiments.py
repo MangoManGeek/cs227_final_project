@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 
 import datetime
-from auto_encoder import AutoEncoder, train_step, LAMBDA, Encoder, train_step_new
+from auto_encoder import AutoEncoder, train_step, LAMBDA, Encoder, train_step_new, train_step_enc_sep
 from preprocess import augmentation
 from tqdm import tqdm
 from sample_evaluation_funcs import *
@@ -66,7 +66,7 @@ def train(ae, encoder, EPOCHS, train_dataset, suffix, experiment, lambda_p):
             total_re = 0
         #     for i, (input, _) in enumerate(train_dataset):
             for (input, _) in tqdm(train_dataset):
-                loss, similarity_loss, reconstruction_loss = train_step_new(input, ae, encoder, lambda_p=lambda_p)
+                loss, similarity_loss, reconstruction_loss = train_step(input, ae, lambda_p=lambda_p)
         #         if i % 100 == 0:
         #             print(loss)
                 total_loss += loss
@@ -185,7 +185,8 @@ def main():
         "input_shape": (X_train.shape[1], X_train.shape[2]),
         # "filters": [32, 64, 128],
         # "filters": [128, 64, 32],
-        "filters": [32, 32, 32],
+        # "filters": [32, 32, 32],
+        "filters": [32, 32, 16],
         "kernel_sizes": [5, 5, 5],
         "code_size": 16,
     }
@@ -218,7 +219,7 @@ def main():
     code_test = recon_eval(ae, X_test, suffix, experiment)
     sim_eval(X_test, code_test, suffix, experiment)
 
-    sample_evaluation(ae.encode, encoder, ae.decode, experiment, suffix, DATA = dataset_name)
+    sample_evaluation(ae.encode, ae.encode, ae.decode, experiment, suffix, DATA = dataset_name)
 
 if __name__ == '__main__':
     main()

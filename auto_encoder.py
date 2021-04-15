@@ -330,3 +330,27 @@ def train_step_new(input, auto_encoder, encoder, optimizer=_optimizer, loss=_mse
     enc_gradients = similarity_tape.gradient(similarity_loss, enc_trainables)
     optimizer.apply_gradients(zip(enc_gradients, enc_trainables))
     return loss, similarity_loss, reconstruction_loss
+
+
+def train_step_enc_sep(input, auto_encoder, encoder, optimizer=_optimizer, loss=_mse_loss, lambda_p=None):
+    dtw_input = similarity_funcs(input)
+    with tf.GradientTape() as tape, tf.GradientTape() as similarity_tape:
+        codes = auto_encoder.encode(input, training=True)
+        codes_enc = encoder(input, training=True)
+        eu_code = eu_code_func(codes_enc)
+        decodes = auto_encoder.decode(codes, training=True)
+        reconstruction_loss = loss(input, decodes)
+        # dtw_input = similarity_funcs(decodes)
+        similarity_loss = abs(tf.cast(eu_code, dtype=tf.float32) - tf.cast(dtw_input, dtype=tf.float32))
+        # similarity_loss = loss(eu_code, dtw_input)
+        # lambda_p = lambda_p if lambda_p else LAMBDA
+        # loss = lambda_p * tf.cast(reconstruction_loss, dtype=tf.float32) + (1 - lambda_p) * similarity_loss
+        loss = reconstruction_loss
+        trainables = auto_encoder.encode.trainable_variables + auto_encoder.decode.trainable_variables
+        enc_trainables = encoder.trainable_variables
+    gradients = tape.gradient(loss, trainables)
+    optimizer.apply_gradients(zip(gradients, trainables))
+
+    enc_gradients = similarity_tape.gradient(similarity_loss, enc_trainables)
+    optimizer.apply_gradients(zip(enc_gradients, enc_trainables))
+    return loss, similarity_loss, reconstruction_loss

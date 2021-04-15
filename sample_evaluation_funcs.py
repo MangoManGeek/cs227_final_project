@@ -72,7 +72,7 @@ import evaluation
 #     return CLUSTERING.predict(x)
 
 
-def sample_evaluation(ENCODER_SIM, ENCODER_REC, DECODER, experiment, suffix, DATA = "GunPoint"):
+def sample_evaluation(ENCODER_REC, ENCODER_SIM, DECODER, experiment, suffix, DATA = "GunPoint"):
 
     def encoder_sim(x):
         assert len(x.shape) == 2
