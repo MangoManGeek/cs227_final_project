@@ -95,16 +95,45 @@ def sample_evaluation(ENCODER_REC, ENCODER_SIM, DECODER, experiment, suffix, DAT
         return result
 
     def distance_collection(x, y):
+        print("using dtw evaluation")
+        return distance_collection_dtw(x, y)
+
+        # print("using euclidean evaluation")
+        # return distance_collection_euclidean(x, y)
+
+    def distance_timeseries(x, y):
+        print("using dtw evaluation")
+        return distance_timeseries_dtw(x, y)
+
+        # print("using euclidean evaluation")
+        # return distance_timeseries_euclidean(x, y)
+
+    def distance_collection_euclidean(x, y):
         assert len(x.shape) == 2
         assert len(y.shape) == 2
         assert len(x) == len(y)
         return np.linalg.norm(x-y, axis=1)
+    
+    def distance_collection_dtw(x, y):
+        assert len(x.shape) == 2
+        assert len(y.shape) == 2
+        assert len(x) == len(y)
+        rv = []
+        for i in range(len(x)):
+            rv.append(dtw(x[i], y[i], keep_internals=False).distance)
+        return np.array(rv)
 
-    def distance_timeseries(x, y):
+    def distance_timeseries_euclidean(x, y):
         assert len(x.shape) == 1
         assert len(y.shape) == 1
         assert len(x) == len(y)
         return np.linalg.norm(x-y)
+
+    def distance_timeseries_dtw(x, y):
+        assert len(x.shape) == 1
+        assert len(y.shape) == 1
+        assert len(x) == len(y)
+        return dtw(x, y, keep_internals=False).distance
 
     def clustering(x):
         assert len(x.shape) == 2
