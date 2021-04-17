@@ -282,8 +282,8 @@ def main():
     ae_encoder_path = os.path.join(cwd, m_type, dataset_name, "auto_encoder")
     ae_decoder_path = os.path.join(cwd, m_type, dataset_name, "decoder")
 
-
-    encoder.save(encoder_path)
+    if not args.auto:
+        encoder.save(encoder_path)
     ae.encode.save(ae_encoder_path)
     ae.decode.save(ae_decoder_path)
     sample_evaluation(ae.encode, ae.encode, ae.decode, experiment, suffix, DATA = dataset_name)
