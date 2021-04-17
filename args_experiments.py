@@ -56,7 +56,7 @@ def normalize(data):
     stddev = np.broadcast_to(np.std(data, axis=1)[:, None, :], (sz, l, d)) 
     return (data - means)/stddev
 
-def train(ae, encoder, EPOCHS, train_dataset, suffix, experiment, lambda_p):
+def train(ae, encoder, EPOCHS, train_dataset, suffix, experiment, lambda_p, args):
     print("training with lambda = ", lambda_p)
     loss_history = []
     sim_history = []
@@ -271,7 +271,7 @@ def main():
     train_dataset = train_dataset.shuffle(SHUFFLE_BUFFER).batch(BATCH)
 
     suffix = "lam={lam}".format(lam=lam)
-    train(ae, encoder, EPOCHS, train_dataset, suffix, experiment, lam)
+    train(ae, encoder, EPOCHS, train_dataset, suffix, experiment, lam, args)
 
 
     code_test = recon_eval(ae, X_test, suffix, experiment)
