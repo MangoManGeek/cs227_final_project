@@ -278,9 +278,16 @@ def main():
     sim_eval(X_test, code_test, suffix, experiment)
 
     cwd = os.path.abspath(os.getcwd())
-    encoder_path = os.path.join(cwd, m_type, dataset_name, "encoder")
-    ae_encoder_path = os.path.join(cwd, m_type, dataset_name, "auto_encoder")
-    ae_decoder_path = os.path.join(cwd, m_type, dataset_name, "decoder")
+    metadata = "lambda_{l}_filter_{filter1}{filter2}{filter3}_epoch_{epoch}_batch_{batch}".format(
+        l = args.l,
+        filter1 = args.filter1,
+        filter2 = args.filter2,
+        filter3 = args.filter3,
+        epoch = args.epoch,
+        batch = args.batch)
+    encoder_path = os.path.join(cwd, m_type, dataset_name, metadata, "encoder")
+    ae_encoder_path = os.path.join(cwd, m_type, dataset_name, metadata, "auto_encoder")
+    ae_decoder_path = os.path.join(cwd, m_type, dataset_name, metadata, "decoder")
 
     if not args.auto:
         encoder.save(encoder_path)
