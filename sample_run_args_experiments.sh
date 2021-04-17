@@ -1,0 +1,1 @@
+python3 args_experiments.py -a 0.99 32 64 128 50 10
