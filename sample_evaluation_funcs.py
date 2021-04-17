@@ -1,3 +1,4 @@
+from comet_ml import Experiment
 import sys, os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 #sys.path.append("/data/fsolleza/Sandbox/timeseries-data") # path to this repository
@@ -18,6 +19,7 @@ from sklearn.cluster import KMeans
 import argparse
 # from utils import *
 import evaluation
+from dtw import *
 
 # PARSER = argparse.ArgumentParser()
 # PARSER.add_argument('-d', '--dataset', default=None, required=True, help="dataset to run")
@@ -95,45 +97,21 @@ def sample_evaluation(ENCODER_REC, ENCODER_SIM, DECODER, experiment, suffix, DAT
         return result
 
     def distance_collection(x, y):
-        print("using dtw evaluation")
-        return distance_collection_dtw(x, y)
-
-        # print("using euclidean evaluation")
-        # return distance_collection_euclidean(x, y)
+        assert len(x.shape) == 2
+        assert len(y.shape) == 2
+        assert len(x) == len(y)
+        # return np.linalg.norm(x-y, axis=1)
+        res = np.zeros(len(x))
+        for i in range(len(x)):
+            res[i] = dtw(tf.cast(x[i], dtype=tf.float64), tf.cast(y[i], dtype=tf.float64), distance_only=True, keep_internals=False).distance
+        return res
 
     def distance_timeseries(x, y):
-        print("using dtw evaluation")
-        return distance_timeseries_dtw(x, y)
-
-        # print("using euclidean evaluation")
-        # return distance_timeseries_euclidean(x, y)
-
-    def distance_collection_euclidean(x, y):
-        assert len(x.shape) == 2
-        assert len(y.shape) == 2
-        assert len(x) == len(y)
-        return np.linalg.norm(x-y, axis=1)
-    
-    def distance_collection_dtw(x, y):
-        assert len(x.shape) == 2
-        assert len(y.shape) == 2
-        assert len(x) == len(y)
-        rv = []
-        for i in range(len(x)):
-            rv.append(dtw(x[i], y[i], keep_internals=False).distance)
-        return np.array(rv)
-
-    def distance_timeseries_euclidean(x, y):
         assert len(x.shape) == 1
         assert len(y.shape) == 1
         assert len(x) == len(y)
-        return np.linalg.norm(x-y)
-
-    def distance_timeseries_dtw(x, y):
-        assert len(x.shape) == 1
-        assert len(y.shape) == 1
-        assert len(x) == len(y)
-        return dtw(x, y, keep_internals=False).distance
+        # return np.linalg.norm(x-y)
+        return dtw(tf.cast(x, dtype=tf.float64), tf.cast(y, dtype=tf.float64), distance_only=True, keep_internals=False).distance
 
     def clustering(x):
         assert len(x.shape) == 2
@@ -172,4 +150,24 @@ def sample_evaluation(ENCODER_REC, ENCODER_SIM, DECODER, experiment, suffix, DAT
 #     print("{}, reconstruction: {:.3f}, distance mse: {:.3f}, distance mae: {:.3f}, common nn: {:.3f}, rand index: {:.3f}".format(DATA, recon, dist[0], dist[1], common, ri))
 
 
+if __name__ == "__main__":
+    PARSER = argparse.ArgumentParser()
+    PARSER.add_argument('-d', '--dataset', default=None, required=True, help="dataset to run")
+    # PARSER.add_argument('-d', '--dataset', default="GunPoint", required=False, help="dataset to run")
+    PARSER.add_argument('-m', '--models', default="sample_model", required=False, help="dataset to run")
+    # PARSER.add_argument('-m', '--models', default="tmp", required=False, help="dataset to run")
+    ARGS = PARSER.parse_args()
 
+    DATA = ARGS.dataset
+    MODELS_PATH = ARGS.models
+
+    ENCODER = tf.keras.models.load_model(os.path.join(MODELS_PATH, DATA, "encoder"))
+    AUTO_ENCODER = tf.keras.models.load_model(os.path.join(MODELS_PATH, DATA, "auto_encoder"))
+    DECODER = tf.keras.models.load_model(os.path.join(MODELS_PATH, DATA, "decoder"))
+
+    experiment = Experiment(log_code=False)
+
+    dataset_name = "GunPoint"
+    suffix = "lam={lam}".format(lam=0.99)
+
+    sample_evaluation(AUTO_ENCODER, AUTO_ENCODER, DECODER, experiment, suffix)

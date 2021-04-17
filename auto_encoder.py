@@ -130,7 +130,7 @@ def similarity_funcs(input):
         for j in range(i + 1, remove_last_dim.shape[0]):
             # total_distance += tf_dtw_with_matrix(tf.cast(remove_last_dim[i], dtype=tf.float64), tf.cast(remove_last_dim[j], dtype=tf.float64))
             # dist = tf.linalg.norm(remove_last_dim[i] - remove_last_dim[j])
-            total_distance += dtw(tf.cast(remove_last_dim[i], dtype=tf.float64), tf.cast(remove_last_dim[j], dtype=tf.float64)).distance
+            total_distance += dtw(tf.cast(remove_last_dim[i], dtype=tf.float64), tf.cast(remove_last_dim[j], dtype=tf.float64), distance_only=True).distance
     return total_distance / (remove_last_dim.shape[0] * (remove_last_dim.shape[0] - 1) / 2)
 
 
